@@ -10,24 +10,28 @@ pipeline {
         stage('Setup') {
             steps {
                 sh """
-                    echo "🔧 Setting up Python environment..."
+                    echo "🔧 Setting up environment..."
 
-                    # Use bash shell explicitly
-                    /bin/bash -c '
-                    
-                    # Ensure virtual environment is created
-                    python3 -m venv venv
-                    . venv/bin/activate   # Use . instead of source
-                    
-                    # Upgrade pip
+                    # Ensure Python dependencies are installed
                     pip install --upgrade pip
-
-                    # Install dependencies
                     pip install -r requirements.txt
                     pip install pytest
 
+                    # Ensure Docker is installed
+                    echo "🔍 Checking if Docker is installed..."
+                    if ! command -v docker &> /dev/null; then
+                        echo "⚠️ Docker not found. Installing..."
+                        sudo apt update -y
+                        sudo apt install -y docker.io
+                        sudo systemctl enable docker
+                        sudo systemctl start docker
+                        sudo usermod -aG docker jenkins
+                        echo "✅ Docker installed successfully."
+                    else
+                        echo "✅ Docker is already installed."
+                    fi
+
                     echo "✅ Setup completed."
-                    '
                 """
             }
         }
@@ -36,12 +40,8 @@ pipeline {
             steps {
                 sh """
                     echo "🧪 Running Tests..."
-
-                    /bin/bash -c '
-                    . venv/bin/activate
                     python3 -m pytest
                     echo "✅ Tests completed successfully."
-                    '
                 """
             }
         }
@@ -81,11 +81,6 @@ pipeline {
     }
 
     post {
-        always {
-            echo "🛑 Cleaning up workspace..."
-            sh "rm -rf venv"
-            echo "✅ Cleanup completed."
-        }
         failure {
             echo "❌ Build failed. Check the logs for more details."
         }
