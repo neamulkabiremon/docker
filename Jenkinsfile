@@ -25,11 +25,16 @@ pipeline {
                         sudo apt install -y docker.io
                         sudo systemctl enable docker
                         sudo systemctl start docker
-                        sudo usermod -aG docker jenkins
                         echo "✅ Docker installed successfully."
                     else
                         echo "✅ Docker is already installed."
                     fi
+
+                    # Ensure Jenkins user has Docker permissions
+                    echo "🔑 Adding Jenkins user to Docker group..."
+                    sudo usermod -aG docker jenkins
+                    sudo chmod 666 /var/run/docker.sock
+                    echo "✅ Permissions updated."
 
                     echo "✅ Setup completed."
                 """
@@ -62,7 +67,9 @@ pipeline {
             steps {
                 sh """
                     echo "🐳 Building Docker Image..."
+                    newgrp docker <<EOF
                     docker build -t ${IMAGE_TAG} .
+                    EOF
                     echo "✅ Docker image built successfully."
                     docker image ls
                 """
