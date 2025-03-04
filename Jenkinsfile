@@ -11,11 +11,14 @@ pipeline {
             steps {
                 sh """
                     echo "🔧 Setting up Python environment..."
+
+                    # Use bash shell explicitly
+                    /bin/bash -c '
                     
                     # Ensure virtual environment is created
                     python3 -m venv venv
-                    source venv/bin/activate
-
+                    . venv/bin/activate   # Use . instead of source
+                    
                     # Upgrade pip
                     pip install --upgrade pip
 
@@ -24,6 +27,7 @@ pipeline {
                     pip install pytest
 
                     echo "✅ Setup completed."
+                    '
                 """
             }
         }
@@ -32,9 +36,12 @@ pipeline {
             steps {
                 sh """
                     echo "🧪 Running Tests..."
-                    source venv/bin/activate
+
+                    /bin/bash -c '
+                    . venv/bin/activate
                     python3 -m pytest
                     echo "✅ Tests completed successfully."
+                    '
                 """
             }
         }
